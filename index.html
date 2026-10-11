@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#102a43">
+<title>Analisi Lotto</title>
+<style>
+:root{color-scheme:dark;--bg:#0b1724;--panel:#13283b;--panel2:#1a344b;--text:#f1f5f9;--muted:#a9bdce;--accent:#53d3a5;--line:#2b455b;--warn:#ffd166}
+*{box-sizing:border-box}body{margin:0;background:linear-gradient(160deg,#102a43,#08111c 65%);color:var(--text);font:16px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;padding:0 0 calc(24px + env(safe-area-inset-bottom))}
+header{padding:24px 18px 18px;background:#102a43;border-bottom:1px solid var(--line)}header h1{font-size:1.65rem;margin:0 0 5px}header p{margin:0;color:var(--muted);font-size:.94rem}
+main{max-width:850px;margin:auto;padding:14px;display:grid;gap:14px}.card{background:rgba(19,40,59,.96);border:1px solid var(--line);border-radius:16px;padding:16px;box-shadow:0 8px 22px #0002}
+h2{font-size:1.12rem;margin:0 0 12px}label{display:block;font-weight:650;margin:10px 0 5px}input,select,textarea,button{font:inherit}input,select,textarea{width:100%;padding:12px;border:1px solid #456078;border-radius:10px;background:#091725;color:var(--text);min-height:46px}textarea{min-height:88px;resize:vertical}button{border:0;border-radius:11px;padding:12px 15px;font-weight:750;min-height:46px;cursor:pointer}.primary{background:var(--accent);color:#06251b}.secondary{background:#29475f;color:var(--text)}.danger{background:#693b44;color:#fff}.actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:12px}.actions button{flex:1 1 135px}.hint{font-size:.88rem;color:var(--muted)}.wheels{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}.wheel{display:flex;align-items:center;gap:7px;background:#091725;border:1px solid var(--line);padding:8px;border-radius:9px;font-size:.9rem}.wheel input{width:18px;min-height:18px;height:18px;margin:0}.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.stat{background:#091725;padding:12px;border-radius:11px;border:1px solid var(--line)}.stat strong{display:block;font-size:1.35rem;color:var(--accent)}.stat span{font-size:.8rem;color:var(--muted)}.scroll{overflow:auto}table{width:100%;border-collapse:collapse;font-size:.88rem}th,td{text-align:left;padding:9px 8px;border-bottom:1px solid var(--line);white-space:nowrap}th{color:#b9d0df}.status{margin-top:10px;padding:10px;border-radius:9px;background:#091725;color:var(--muted);overflow-wrap:anywhere}.pill{display:inline-block;background:#29475f;padding:3px 8px;border-radius:99px;font-size:.8rem;margin:2px}.filelabel{display:block;background:#29475f;text-align:center;padding:12px;border-radius:10px;margin-top:8px;font-weight:700}.filelabel input{display:none}.small{font-size:.8rem;color:var(--muted)}@media(min-width:700px){main{grid-template-columns:1fr 1fr}.wide{grid-column:1/-1}.wheels{grid-template-columns:repeat(4,minmax(0,1fr))}}
+</style>
+</head>
+<body>
+<header><h1>🎱 Analisi Lotto</h1><p>Archivio, formule personalizzate e verifica storica. I risultati sono statistiche sui dati inseriti, non previsioni affidabili.</p></header>
+<main>
+<section class="card wide">
+<h2>1. Archivio estrazioni</h2>
+<p class="hint">Importa un CSV con intestazioni come <b>Data, Estrazione, BA1…BA5, CA1…CA5 … NZ1…NZ5</b>. Sono accettate anche intestazioni senza la colonna Estrazione. Puoi salvare una copia dell’archivio sul telefono.</p>
+<label class="filelabel">📂 Scegli file CSV dal telefono<input id="file" type="file" accept=".csv,text/csv"></label>
+<div class="actions"><button class="secondary" id="sample">Carica archivio di esempio</button><button class="secondary" id="exportArchive">Esporta archivio CSV</button><button class="danger" id="clear">Cancella archivio</button></div>
+<div id="archiveStatus" class="status">Nessun archivio caricato. Importa il tuo CSV per iniziare.</div>
+</section>
+<section class="card">
+<h2>2. Formula</h2>
+<p class="hint">Usa JavaScript. Variabili disponibili: <b>BA1…BA5, CA1…CA5, …, NZ1…NZ5</b> (numero estratto in quella posizione). La formula deve restituire un numero da 1 a 90.</p>
+<label for="formula">Formula da verificare</label>
+<textarea id="formula">90 - Math.abs(BA2 - NA2)</textarea>
+<label for="target">Numero obiettivo (facoltativo)</label><input id="target" type="number" min="1" max="90" placeholder="Lascia vuoto per usare il risultato della formula">
+<label for="lags">Colpi da controllare</label><input id="lags" type="number" min="1" max="20" value="5">
+<label for="mode">Confronto</label><select id="mode"><option value="all">Il numero deve uscire su almeno una ruota selezionata</option><option value="same">Il numero deve uscire sulla stessa ruota di calcolo</option></select>
+<p class="small">La formula viene eseguita sul dispositivo. Inserisci solo formule JavaScript che conosci e di cui ti fidi.</p>
+</section>
+<section class="card">
+<h2>3. Ruote</h2>
+<div class="actions"><button class="secondary" id="allW">Seleziona tutte</button><button class="secondary" id="noW">Deseleziona tutte</button></div>
+<div id="wheels" class="wheels"></div>
+<label for="calcWheel">Ruota di calcolo per le variabili senza prefisso</label>
+<select id="calcWheel"><option value="BA">Bari</option><option value="CA">Cagliari</option><option value="FI">Firenze</option><option value="GE">Genova</option><option value="MI">Milano</option><option value="NA" selected>Napoli</option><option value="PA">Palermo</option><option value="RO">Roma</option><option value="TO">Torino</option><option value="VE">Venezia</option><option value="NZ">Nazionale</option></select>
+<p class="hint">Seleziona le ruote su cui verificare le uscite. La formula usa i nomi espliciti (es. BA2, NA2); la ruota di calcolo è indicata per chiarezza.</p>
+</section>
+<section class="card wide">
+<h2>4. Analisi storica</h2>
+<p class="hint">Per ogni estrazione in cui la formula può essere calcolata, l'app cerca il numero nei colpi successivi fino al limite impostato. Un “tentativo” è una previsione verificabile; una “vincita” è una presenza del numero su una delle ruote selezionate.</p>
+<button class="primary" id="analyze" style="width:100%">Esegui verifica storica</button>
+<div class="stats" style="margin-top:12px">
+<div class="stat"><strong id="attempts">—</strong><span>Tentativi</span></div><div class="stat"><strong id="wins">—</strong><span>Vincite</span></div><div class="stat"><strong id="rate">—</strong><span>Percentuale</span></div>
+</div>
+<div id="resultStatus" class="status">Carica un archivio e avvia l'analisi.</div>
+<div class="scroll"><table id="results"><thead><tr><th>Data segnale</th><th>Numero</th><th>Esito</th><th>Colpo</th><th>Data uscita</th><th>Ruota</th></tr></thead><tbody></tbody></table></div>
+<div class="actions"><button class="secondary" id="exportResults">Esporta risultati CSV</button></div>
+</section>
+<section class="card wide">
+<h2>Nota sull'archivio locale</h2>
+<p class="hint">L'archivio resta nella memoria del browser su questo telefono. Se cancelli i dati del browser, usi la navigazione in incognito o cambi browser, potresti perderlo: conserva una copia CSV. Questa è una pagina web locale, non è pubblicata su Internet.</p>
+</section>
+</main>
+<script>
+const WHEELS=['BA','CA','FI','GE','MI','NA','PA','RO','TO','VE','NZ'];
+const names={BA:'Bari',CA:'Cagliari',FI:'Firenze',GE:'Genova',MI:'Milano',NA:'Napoli',PA:'Palermo',RO:'Roma',TO:'Torino',VE:'Venezia',NZ:'Nazionale'};
+let draws=[], lastResults=[], storageMode='';
+const DB_NAME='AnalisiLottoDB', DB_STORE='archivio', DB_KEY='lotto_draws_v2';
+function openDB(){return new Promise((resolve,reject)=>{if(!('indexedDB' in window))return reject(Error('IndexedDB non disponibile'));let req=indexedDB.open(DB_NAME,1);req.onupgradeneeded=()=>{if(!req.result.objectStoreNames.contains(DB_STORE))req.result.createObjectStore(DB_STORE)};req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error||Error('Apertura archivio non riuscita'))})}
+async function readDB(){const db=await openDB();return new Promise((resolve,reject)=>{const tx=db.transaction(DB_STORE,'readonly'),req=tx.objectStore(DB_STORE).get(DB_KEY);req.onsuccess=()=>{db.close();resolve(req.result||[])};req.onerror=()=>{db.close();reject(req.error||Error('Lettura archivio non riuscita'))}})}
+async function writeDB(data){const db=await openDB();return new Promise((resolve,reject)=>{const tx=db.transaction(DB_STORE,'readwrite');tx.objectStore(DB_STORE).put(data,DB_KEY);tx.oncomplete=()=>{db.close();resolve()};tx.onerror=()=>{db.close();reject(tx.error||Error('Scrittura archivio non riuscita'))};tx.onabort=()=>{db.close();reject(tx.error||Error('Salvataggio annullato'))}})}
+async function deleteDB(){try{const db=await openDB();await new Promise((resolve,reject)=>{const tx=db.transaction(DB_STORE,'readwrite');tx.objectStore(DB_STORE).delete(DB_KEY);tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error)});db.close()}catch(e){}}
+const $=id=>document.getElementById(id);
+function buildWheels(){ $('wheels').innerHTML=WHEELS.map(w=>`<label class="wheel"><input type="checkbox" value="${w}" checked> ${names[w]}</label>`).join(''); }
+function selected(){return [...$('wheels').querySelectorAll('input:checked')].map(x=>x.value)}
+function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function dateSort(a,b){return String(a.date).localeCompare(String(b.date))}
+function status(){ $('archiveStatus').textContent=draws.length?`${draws.length} estrazioni caricate. ${storageMode||'Salvataggio da verificare'}. Intervallo: ${draws[0].date||'?'} – ${draws[draws.length-1].date||'?'}.`:'Nessun archivio caricato.'; }
+async function persist(){draws.sort(dateSort);let errors=[];try{localStorage.setItem('lotto_draws_v1',JSON.stringify(draws))}catch(e){errors.push('memoria browser non disponibile')}try{await writeDB(draws);storageMode='salvataggio IndexedDB riuscito'}catch(e){errors.push('IndexedDB non disponibile in questa apertura del file')}if(errors.length)storageMode=errors.join('; ');status();if(errors.length) $('archiveStatus').textContent+=' ATTENZIONE: esporta una copia CSV e non considerare garantito il salvataggio.';return errors.length===0}
+async function initArchive(){try{let saved=await readDB();if(Array.isArray(saved)&&saved.length){draws=saved;storageMode='archivio ripristinato da IndexedDB';status();return}}catch(e){}try{const saved=JSON.parse(localStorage.getItem('lotto_draws_v1')||'[]');if(Array.isArray(saved)&&saved.length){draws=saved;storageMode='archivio ripristinato dalla memoria del browser';status();try{await writeDB(draws);storageMode='archivio ripristinato e copiato in IndexedDB';status()}catch(e){}}else{status()}}catch(e){$('archiveStatus').textContent='Memoria locale non disponibile. Importa il CSV ed esporta sempre una copia di sicurezza.'}}
+function parseCSV(text){
+ const lines=text.replace(/^\uFEFF/,'').split(/\r?\n/).filter(l=>l.trim()); if(lines.length<2)throw Error('Il CSV non contiene righe di dati.');
+ const parseLine=line=>{let out=[],s='',q=false;for(let i=0;i<line.length;i++){let c=line[i];if(c==='"'&&line[i+1]==='"'&&q){s+='"';i++}else if(c==='"')q=!q;else if(c===','&&!q){out.push(s.trim());s=''}else s+=c}out.push(s.trim());return out};
+ const head=parseLine(lines[0]).map(x=>x.toUpperCase().replace(/[\s_-]/g,''));const dateIdx=head.findIndex(x=>['DATA','DATE','DATADIESTRAZIONE'].includes(x));if(dateIdx<0)throw Error('Non trovo la colonna Data.');
+ let out=[];
+ for(let r=1;r<lines.length;r++){const cells=parseLine(lines[r]);if(!cells.some(Boolean))continue;let d={date:cells[dateIdx]||`riga-${r}`};for(let w of WHEELS)for(let n=1;n<=5;n++){let idx=head.findIndex(h=>h===w+n);let v=idx>=0?Number(cells[idx]):NaN;if(!Number.isInteger(v)||v<1||v>90)throw Error(`Valore mancante/non valido in riga ${r+1}, colonna ${w}${n}. Verifica intestazioni e CSV.`);d[w+n]=v;}out.push(d)}
+ return out;
+}
+function csvCell(v){let s=String(v??'');return /[",\n;]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s}
+function download(name,text,type='text/csv;charset=utf-8'){const blob=new Blob(['\ufeff',text],{type}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)}
+function archiveCSV(){let h=['Data','Estrazione',...WHEELS.flatMap(w=>[1,2,3,4,5].map(n=>w+n))];return [h,...draws.map((d,i)=>[d.date,d.id||i+1,...WHEELS.flatMap(w=>[1,2,3,4,5].map(n=>d[w+n]))])].map(r=>r.map(csvCell).join(',')).join('\n')}
+function formulaFn(src){return new Function(...WHEELS.flatMap(w=>[1,2,3,4,5].map(n=>w+n)),`"use strict"; return (${src});`)}
+function analyze(){
+ if(draws.length<2){$('resultStatus').textContent='Importa almeno due estrazioni.';return}
+ const ws=selected();if(!ws.length){$('resultStatus').textContent='Seleziona almeno una ruota di verifica.';return}
+ let lag=Math.max(1,Math.min(20,Number($('lags').value)||5)), target=$('target').value.trim(), fn;
+ try{fn=formulaFn($('formula').value)}catch(e){$('resultStatus').textContent='Formula non valida: '+e.message;return}
+ let results=[],attempts=0,wins=0,errors=0;
+ for(let i=0;i<draws.length-1;i++){
+   let d=draws[i], vals=WHEELS.flatMap(w=>[1,2,3,4,5].map(n=>d[w+n]));
+   let num;try{num=target?Number(target):Number(fn(...vals))}catch(e){errors++;continue}
+   if(!Number.isInteger(num)||num<1||num>90){errors++;continue}
+   attempts++;let found=null;
+   for(let step=1;step<=lag&&i+step<draws.length&&!found;step++){
+     let future=draws[i+step];
+     for(let w of ws){let arr=[1,2,3,4,5].map(n=>future[w+n]);if(arr.includes(num)){found={step,date:future.date,w};break}}
+   }
+   if(found)wins++;
+   results.push({date:d.date,num,hit:!!found,step:found?.step??'',hitDate:found?.date??'',wheel:found?.w??''});
+ }
+ lastResults=results;
+ $('attempts').textContent=attempts;$('wins').textContent=wins;$('rate').textContent=attempts?(wins/attempts*100).toFixed(1)+'%':'—';
+ $('resultStatus').textContent=`Verificate ${attempts} previsioni; ${errors} righe saltate perché la formula non ha prodotto un intero da 1 a 90. La ricerca considera i ${lag} colpi successivi disponibili.`;
+ $('results').querySelector('tbody').innerHTML=results.slice().reverse().map(r=>`<tr><td>${esc(r.date)}</td><td><b>${r.num}</b></td><td>${r.hit?'✅ Uscito':'— Non uscito'}</td><td>${r.hit?r.step:'—'}</td><td>${esc(r.hitDate||'—')}</td><td>${esc(r.wheel||'—')}</td></tr>`).join('');
+}
+buildWheels();initArchive();
+$('file').addEventListener('change',async e=>{let f=e.target.files[0];if(!f)return;try{draws=parseCSV(await f.text());const ok=await persist();$('resultStatus').textContent=ok?'Archivio importato e salvato in IndexedDB.':'Archivio importato, ma il salvataggio persistente non è confermato. Esporta una copia CSV.'}catch(err){$('archiveStatus').textContent='Errore importazione: '+err.message}e.target.value=''});
+$('allW').onclick=()=> $('wheels').querySelectorAll('input').forEach(x=>x.checked=true);
+$('noW').onclick=()=> $('wheels').querySelectorAll('input').forEach(x=>x.checked=false);
+$('analyze').onclick=analyze;
+$('exportArchive').onclick=()=>{if(!draws.length)return alert('Non c’è un archivio da esportare.');download('archivio_lotto.csv',archiveCSV())};
+$('exportResults').onclick=()=>{if(!lastResults.length)return alert('Esegui prima una verifica.');let h=['Data segnale','Numero','Esito','Colpo','Data uscita','Ruota'];download('risultati_analisi_lotto.csv',[h,...lastResults.map(r=>[r.date,r.num,r.hit?'Uscito':'Non uscito',r.step,r.hitDate,r.wheel])].map(r=>r.map(csvCell).join(',')).join('\n'))};
+$('clear').onclick=async()=>{if(confirm('Vuoi cancellare l’archivio salvato su questo dispositivo?')){draws=[];try{localStorage.removeItem('lotto_draws_v1')}catch(e){}await deleteDB();lastResults=[];await persist();$('results').querySelector('tbody').innerHTML='';$('attempts').textContent=$('wins').textContent=$('rate').textContent='—'}};
+$('sample').onclick=()=>{let d=[];for(let i=0;i<12;i++){let row={date:`2026-${String(1+Math.floor(i/4)).padStart(2,'0')}-${String(2+(i%4)*7).padStart(2,'0')}`};for(let w of WHEELS){let nums=[];while(nums.length<5){let n=1+Math.floor(Math.random()*90);if(!nums.includes(n))nums.push(n)}nums.forEach((n,j)=>row[w+(j+1)]=n)}d.push(row)}draws=d;persist().then(()=>{$('archiveStatus').textContent+=' Attenzione: dati dimostrativi casuali, non estrazioni reali.'})};
+</script>
+</body></html>

@@ -1,21 +1,90 @@
-name: Verifica archivio ufficiale Lotto
+name: Aggiorna archivio ufficiale Lotto
 
-on:
-  workflow_dispatch:
-
+'on':
+ workflow_dispatch:
+ schedule:
+ - cron: '15 20 * * *'
 permissions:
-  contents: read
-
+  contents: write
 jobs:
-  verifica:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Scarica archivio ufficiale
-        run: |
-          curl -L --fail "https://www.brightstarlottery.it/STORICO_ESTRAZIONI_LOTTO/storico01-oggi.zip" -o storico.zip
-          unzip -l storico.zip
-          mkdir archivio
-          unzip -o storico.zip -d archivio
-          find archivio -type f -exec file {} \;
-          find archivio -type f \( -name "*.txt" -o -name "*.csv" -o -name "*.dat" \) -exec sh -c 'echo "=== $1 ==="; head -n 10 "$1"' _ {} \;
-          
+ aggiorna:
+  runs-on: ubuntu-latest
+ steps:
+ - name: Scarica archivio ufficiale
+   uses: actions/checkout@v4
+ - name: Scarica e converti le estrazioni
+   run: |
+      curl -L --fail "https://www.brightstarlottery.it/STORICO_ESTRAZIONI_LOTTO/storico01-oggi.zip" -o storico.zip
+      unzip -o storico.zip -d archivio
+      python3 - <<'PY'
+      import csv
+      import datetime
+      import os
+      from collections import defaultdict
+
+      os.makedirs('archivio', exist_ok=True)
+      file_txt = 'archivio/storico01-oggi.txt'
+
+      if not os.path.exists(file_txt):
+          import zipfile
+          with zipfile.ZipFile('storico.zip') as z:
+              nome = next(n for n in z.namelist() if n.endswith('.txt'))
+              with z.open(nome) as src, open(file_txt, 'wb') as dst:
+                  dst.write(src.read())
+
+      ruote = ['BA','CA','FI','GE','MI','NA','PA','RO','TO','VE','NZ']
+      estrazioni = defaultdict(dict)
+
+      with open(file_txt, encoding='latin-1') as f:
+          for riga in f:
+              p = riga.split()
+              if len(p) < 7:
+                  continue
+              data, ruota = p[0], p[1]
+              ruota = {'RM': 'RO'}.get(ruota, ruota)
+              if ruota not in ruote:
+                  continue
+              try:
+                  data = datetime.datetime.strptime(data, '%Y/%m/%d').strftime('%d/%m/%Y')
+                  numeri = [int(n) for n in p[2:7]]
+              except ValueError:
+                  continue
+              if all(1 <= n <= 90 for n in numeri):
+                  estrazioni[data][ruota] = numeri
+
+      intestazione = ['Data', 'Estrazione'] + [
+          f'{r}{n}' for r in ruote for n in range(1, 6)
+      ]
+
+      with open('archivio_lotto_ufficiale.csv', 'w', newline='', encoding='utf-8-sig') as f:
+          writer = csv.writer(f)
+          writer.writerow(intestazione)
+          conteggio = 0
+          for data, valori in sorted(
+              estrazioni.items(),
+              key=lambda x: datetime.datetime.strptime(x[0], '%d/%m/%Y')
+          ):
+              if not all(r in valori for r in ruote):
+                  continue
+              riga = [data, conteggio + 1]
+              for r in ruote:
+                  riga.extend(valori[r])
+              writer.writerow(riga)
+              conteggio += 1
+
+      print('Estrazioni complete convertite:', conteggio)
+      if conteggio == 0:
+          raise SystemExit('ERRORE: nessuna estrazione completa trovata')
+      PY
+
+  - name: Salva il CSV aggiornato su GitHub
+    run: |
+      git config user.name "github-actions[bot]"
+      git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+      git add archivio_lotto_ufficiale.csv
+      if git diff --cached --quiet; then
+        echo "Archivio già aggiornato"
+        exit 0
+      fi
+      git commit -m "Aggiorna archivio ufficiale Lotto"
+      git push

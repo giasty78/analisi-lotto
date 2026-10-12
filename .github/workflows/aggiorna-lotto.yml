@@ -6,14 +6,14 @@ name: Aggiorna archivio ufficiale Lotto
  - cron: '15 20 * * *'
 permissions:
   contents: write
-jobs:
- aggiorna:
+  jobs:
+  aggiorna:
   runs-on: ubuntu-latest
- steps:
- - name: Scarica archivio ufficiale
-   uses: actions/checkout@v4
- - name: Scarica e converti le estrazioni
-   run: |
+  steps:
+  - name: Scarica archivio ufficiale
+    uses: actions/checkout@v4
+  - name: Scarica e converti le estrazioni
+  run: |
       curl -L --fail "https://www.brightstarlottery.it/STORICO_ESTRAZIONI_LOTTO/storico01-oggi.zip" -o storico.zip
       unzip -o storico.zip -d archivio
       python3 - <<'PY'
@@ -75,11 +75,11 @@ jobs:
       print('Estrazioni complete convertite:', conteggio)
       if conteggio == 0:
           raise SystemExit('ERRORE: nessuna estrazione completa trovata')
-      PY
-
-  - name: Salva il CSV aggiornato su GitHub
-    run: |
-      git config user.name "github-actions[bot]"
+      PY  
+ 
+      - name: Salva il CSV aggiornato su GitHub
+ run: |
+    git config user.name "github-actions[bot]"
       git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
       git add archivio_lotto_ufficiale.csv
       if git diff --cached --quiet; then

@@ -1,11 +1,35 @@
-name: Verifica archivio Lotto
+name: Aggiorna archivio ufficiale Lotto
 
 'on':
-  workflow_dispatch:
+ workflow_dispatch:
+ schedule:
+ - cron: '15 20 * * *'
+
+permissions:
+ contents: write
 
 jobs:
-    verifica:
-     runs-on: ubuntu-latest
-     steps:
-      - name: Scarica archivio ufficiale
-        run: curl -L --fail "https://www.brightstarlottery.it/STORICO_ESTRAZIONI_LOTTO/storico01-oggi.zip" -o storico.zip
+ aggiorna:
+  runs-on: ubuntu-latest
+ steps:
+ - name: Scarica il repository
+   uses: actions/checkout@v4
+
+ - name: Installa Python
+   uses: actions/setup-python@v5
+   with:
+      python-version: '3.x'
+
+ - name: Aggiorna il CSV
+  run: python3 aggiorna_lotto.py
+ - name: Salva il CSV aggiornato
+   run: |
+     git config user.name "github-actions[bot]"
+     git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+     git add archivio_lotto_ufficiale.csv
+     if git diff --cached --quiet; then
+      echo "Nessuna modifica al CSV"
+      else
+        git commit -m "Aggiorna archivio ufficiale Lotto"
+        git push
+      fi

@@ -1,0 +1,21 @@
+name: Verifica archivio ufficiale Lotto
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verifica:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Scarica archivio ufficiale
+        run: |
+          curl -L --fail "https://www.brightstarlottery.it/STORICO_ESTRAZIONI_LOTTO/storico01-oggi.zip" -o storico.zip
+          unzip -l storico.zip
+          mkdir archivio
+          unzip -o storico.zip -d archivio
+          find archivio -type f -exec file {} \;
+          find archivio -type f \( -name "*.txt" -o -name "*.csv" -o -name "*.dat" \) -exec sh -c 'echo "=== $1 ==="; head -n 10 "$1"' _ {} \;
+          

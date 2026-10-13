@@ -1,35 +1,37 @@
 name: Aggiorna archivio ufficiale Lotto
 
 'on':
- workflow_dispatch:
- schedule:
- - cron: '15 20 * * *'
+  workflow_dispatch:
+  schedule:
+    - cron: '15 20 * * *'
 
 permissions:
- contents: write
+  contents: write
 
 jobs:
- aggiorna:
-  runs-on: ubuntu-latest
- steps:
- - name: Scarica il repository
-   uses: actions/checkout@v4
+  aggiorna:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Scarica il repository
+        uses: actions/checkout@v4
 
- - name: Installa Python
-   uses: actions/setup-python@v5
-   with:
-      python-version: '3.x'
+      - name: Configura Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
 
- - name: Aggiorna il CSV
-  run: python3 aggiorna_lotto.py
- - name: Salva il CSV aggiornato
-   run: |
-     git config user.name "github-actions[bot]"
-     git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-     git add archivio_lotto_ufficiale.csv
-     if git diff --cached --quiet; then
-      echo "Nessuna modifica al CSV"
-      else
-        git commit -m "Aggiorna archivio ufficiale Lotto"
-        git push
-      fi
+      - name: Aggiorna il CSV
+        run: python3 aggiorna_lotto.py
+
+      - name: Salva il CSV aggiornato
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add archivio_lotto_ufficiale.csv
+          if git diff --cached --quiet; then
+            echo "Nessuna modifica al CSV"
+          else
+            git commit -m "Aggiorna archivio ufficiale Lotto"
+            git push
+          fi
+          

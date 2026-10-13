@@ -32,7 +32,7 @@ with open(files[0], encoding="latin-1") as f:
             continue
 
         data, ruota = p[0], p[1]
-        ruota = {"RM": "RO"}.get(ruota, ruota)
+        ruota = {"RM": "RO", "RN": "NZ"}.get(ruota, ruota)
 
         if ruota not in RUOTE:
             continue

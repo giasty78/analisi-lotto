@@ -85,4 +85,3 @@ print("Estrazioni salvate:", len(righe))
 
 if not righe:
     raise SystemExit("Errore: nessuna estrazione completa")
-  
